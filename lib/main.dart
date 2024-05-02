@@ -1,27 +1,28 @@
-
 import 'package:flutter/material.dart';
 import 'package:math_expressions/math_expressions.dart';
 
 void main() {
-  runApp(FractionCalculator());
+  runApp(CalculadoraFraccion());
 }
 
-class FractionCalculator extends StatefulWidget {
+class CalculadoraFraccion extends StatefulWidget {
   @override
-  _FractionCalculatorState createState() => _FractionCalculatorState();
+  _CalculadoraFraccionState createState() => _CalculadoraFraccionState();
 }
 
-class _FractionCalculatorState extends State<FractionCalculator> {
+class _CalculadoraFraccionState extends State<CalculadoraFraccion> {
   TextEditingController _controller = TextEditingController();
   String _resultFraction = '';
   String _resultDecimal = '';
+  String _errorMessage = ''; // variable para almacenar el mensaje de error
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       home: Scaffold(
         appBar: AppBar(
-          title: Text('Fraction Calculator'),
+          title: Text('Ejercicio 10.- Calculadora de Fracciones'),
         ),
         body: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -31,13 +32,13 @@ class _FractionCalculatorState extends State<FractionCalculator> {
               TextField(
                 controller: _controller,
                 decoration: InputDecoration(
-                  labelText: 'Ingrese las fracciones separadas por + o -',
+                  labelText: 'Ingrese las fracciones separadas por + o - Ej. 5/2+1/4-2/6',
                 ),
               ),
               SizedBox(height: 20.0),
               ElevatedButton(
-                onPressed: _calculate,
-                child: Text('Calcular'),
+                onPressed: _calcular,
+                child: Text('CALCULAR'),
               ),
               SizedBox(height: 20.0),
               Text(
@@ -49,6 +50,11 @@ class _FractionCalculatorState extends State<FractionCalculator> {
                 'Resultado simplificado: $_resultDecimal',
                 style: TextStyle(fontSize: 18.0),
               ),
+              SizedBox(height: 10.0), // Espacio entre los resultados y el mensaje de error
+              Text(
+                _errorMessage, // Mostrar el mensaje de error aquí
+                style: TextStyle(fontSize: 18.0, color: Colors.red), // Estilo para el mensaje de error
+              ),
             ],
           ),
         ),
@@ -56,45 +62,45 @@ class _FractionCalculatorState extends State<FractionCalculator> {
     );
   }
 
-  void _calculate() {
-  String input = _controller.text;
-  input = input.replaceAll(' ', ''); // Eliminar espacios en blanco
+  void _calcular() {
+    String input = _controller.text;
+    input = input.replaceAll(' ', ''); // Eliminar espacios en blanco
+    _errorMessage = ''; // Limpiar el mensaje de error antes de calcular
 
-  // Reemplazar '-' con '-1*' para simplificar el análisis
-  input = input.replaceAll('-', '-1*');
+    try {
+      Parser p = Parser();
+      ContextModel cm = ContextModel();
 
-  try {
-    Parser p = Parser();
-    ContextModel cm = ContextModel();
+      Expression exp = p.parse(input);
+      double resultDecimal = exp.evaluate(EvaluationType.REAL, cm);
 
-    Expression exp = p.parse(input);
-    double resultDecimal = exp.evaluate(EvaluationType.REAL, cm);
+      // Convertir el resultado decimal en fracción
+      Fraction resultFraction = Fraction.convertirDobleFraccion(resultDecimal);
 
-    // Convertir el resultado decimal en fracción
-    Fraction resultFraction = Fraction.fromDouble(resultDecimal);
+      // Simplificar la fracción
+      resultFraction = fraccionSimplificada(resultFraction);
 
-    // Simplificar la fracción
-    resultFraction = simplifyFraction(resultFraction);
-
-    setState(() {
-      _resultFraction = resultFraction.toString();
-      _resultDecimal = resultDecimal.toStringAsFixed(2);
-    });
-  } catch (e) {
-    // Mostrar un mensaje de advertencia en la consola
-    print('Ingrese fracciones válidas por favor.');
+      setState(() {
+        _resultFraction = resultFraction.toString();
+        _resultDecimal = resultDecimal.toStringAsFixed(2);
+      });
+    } catch (e) {
+      // Mostrar un mensaje de advertencia en caso de error
+      setState(() {
+        _errorMessage = 'Ingrese fracciones válidas por favor.';
+      });
+    }
   }
-}
 
   // Función para simplificar una fracción
-  Fraction simplifyFraction(Fraction fraction) {
-    int gcd = _gcd(fraction.numerator, fraction.denominator);
-    int numerator = fraction.numerator ~/ gcd;
-    int denominator = fraction.denominator ~/ gcd;
-    return Fraction(numerator, denominator);
+  Fraction fraccionSimplificada(Fraction fraction) {
+    int mcd = _minimoComunDivisor(fraction.numerador, fraction.denominador);
+    int numerador = fraction.numerador ~/ mcd;
+    int denominador = fraction.denominador ~/ mcd;
+    return Fraction(numerador, denominador);
   }
 
-  static int _gcd(int a, int b) {
+  static int _minimoComunDivisor(int a, int b) {
     while (b != 0) {
       var t = b;
       b = a % b;
@@ -105,50 +111,53 @@ class _FractionCalculatorState extends State<FractionCalculator> {
 }
 
 class Fraction {
-  int numerator;
-  int denominator;
+  int numerador;
+  int denominador;
 
-  Fraction(this.numerator, this.denominator);
+  Fraction(this.numerador, this.denominador);
 
   @override
   String toString() {
-    if (denominator == 1) {
-      return numerator.toString();
+    if (denominador == 1) {
+      return numerador.toString();
     } else {
-      return '$numerator/$denominator';
+      return '$numerador/$denominador';
     }
   }
 
-  static Fraction fromDouble(double value) {
+  static Fraction convertirDobleFraccion(double valor) {
     // Convertir el valor decimal a una fracción
-    int whole = value.floor();
-    double remainder = value - whole;
+    int finalTodo = valor.floor();
+    double remainder = valor - finalTodo;
 
     const double epsilon = 1.0E-10;
     double x = remainder;
-    double lowerNumerator = 0;
-    double lowerDenominator = 1;
-    double upperNumerator = 1;
-    double upperDenominator = 1;
-    double middleNumerator = 0;
-    double middleDenominator = 0;
+    double numerador = 0;
+    double denominadorInferior = 1;
+    double denominador = 1;
+    double DenominadorAlto = 1;
+    double mitadNumerador = 0;
+    double mitadDeniminador = 0;
 
-    while (true) {
-      middleNumerator = lowerNumerator + upperNumerator;
-      middleDenominator = lowerDenominator + upperDenominator;
-      if (middleDenominator * (x + epsilon) < middleNumerator) {
-        upperNumerator = middleNumerator;
-        upperDenominator = middleDenominator;
-      } else if (middleDenominator * (x - epsilon) > middleNumerator) {
-        lowerNumerator = middleNumerator;
-        lowerDenominator = middleDenominator;
+    int maxIntentos = 1000; // Establecer un límite máximo de iteraciones
+    int intentos = 0;
+
+    while (intentos < maxIntentos) { // Asegurar que no se ejecute indefinidamente
+      intentos++;
+      mitadNumerador = numerador + denominador;
+      mitadDeniminador = denominadorInferior + DenominadorAlto;
+      if (mitadDeniminador * (x + epsilon) < mitadNumerador) {
+        denominador = mitadNumerador;
+        DenominadorAlto = mitadDeniminador;
+      } else if (mitadDeniminador * (x - epsilon) > mitadNumerador) {
+        numerador = mitadNumerador;
+        denominadorInferior = mitadDeniminador;
       } else {
-        return Fraction((whole * middleDenominator + middleNumerator).toInt(),
-            middleDenominator.toInt());
+        return Fraction((finalTodo * mitadDeniminador + mitadNumerador).toInt(),
+            mitadDeniminador.toInt());
       }
     }
+    // Se devuelve el valor aproximado
+    return Fraction(finalTodo, 1);
   }
 }
-
-//C:\Users\DELL\AppData\Local\Android\Sdk\platform-tools
-//.\adb connect localhost:5555
