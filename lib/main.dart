@@ -12,9 +12,9 @@ class CalculadoraFraccion extends StatefulWidget {
 
 class _CalculadoraFraccionState extends State<CalculadoraFraccion> {
   TextEditingController _controller = TextEditingController();
-  String _resultFraction = '';
-  String _resultDecimal = '';
-  String _errorMessage = ''; // variable para almacenar el mensaje de error
+  String _resultadoFraccion = '';
+  String _resultadoDecimal = '';
+  String _errorMensaje = ''; // variable para almacenar el mensaje de error
 
   @override
   Widget build(BuildContext context) {
@@ -42,17 +42,17 @@ class _CalculadoraFraccionState extends State<CalculadoraFraccion> {
               ),
               SizedBox(height: 20.0),
               Text(
-                'Resultado en fracción: $_resultFraction',
+                'Resultado en fracción: $_resultadoFraccion',
                 style: TextStyle(fontSize: 18.0),
               ),
               SizedBox(height: 10.0),
               Text(
-                'Resultado simplificado: $_resultDecimal',
+                'Resultado simplificado: $_resultadoDecimal',
                 style: TextStyle(fontSize: 18.0),
               ),
               SizedBox(height: 10.0), // Espacio entre los resultados y el mensaje de error
               Text(
-                _errorMessage, // Mostrar el mensaje de error aquí
+                _errorMensaje, // Mostrar el mensaje de error aquí
                 style: TextStyle(fontSize: 18.0, color: Colors.red), // Estilo para el mensaje de error
               ),
             ],
@@ -65,7 +65,7 @@ class _CalculadoraFraccionState extends State<CalculadoraFraccion> {
   void _calcular() {
     String input = _controller.text;
     input = input.replaceAll(' ', ''); // Eliminar espacios en blanco
-    _errorMessage = ''; // Limpiar el mensaje de error antes de calcular
+    _errorMensaje = ''; // Limpiar el mensaje de error antes de calcular
 
     try {
       Parser p = Parser();
@@ -81,13 +81,13 @@ class _CalculadoraFraccionState extends State<CalculadoraFraccion> {
       resultFraction = fraccionSimplificada(resultFraction);
 
       setState(() {
-        _resultFraction = resultFraction.toString();
-        _resultDecimal = resultDecimal.toStringAsFixed(2);
+        _resultadoFraccion = resultFraction.toString();
+        _resultadoDecimal = resultDecimal.toStringAsFixed(2);
       });
     } catch (e) {
       // Mostrar un mensaje de advertencia en caso de error
       setState(() {
-        _errorMessage = 'Ingrese fracciones válidas por favor.';
+        _errorMensaje = 'Ingrese fracciones válidas por favor.';
       });
     }
   }
